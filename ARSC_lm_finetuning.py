@@ -1,18 +1,4 @@
 # coding=utf-8
-# Copyright 2018 The Google AI Language Team Authors and The HuggingFace Inc. team.
-# Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """BERT finetuning runner."""
 
 from __future__ import absolute_import, division, print_function, unicode_literals
@@ -412,17 +398,15 @@ def main():
 
     ## Required parameters
     parser.add_argument("--train_corpus",
-                        default=None,
+                        default="data/Amazon_corpus.txt",
                         type=str,
-                        required=True,
                         help="The input train corpus.")
-    parser.add_argument("--bert_model", default=None, type=str, required=True,
+    parser.add_argument("--bert_model", default="bert-base-uncased", type=str,
                         help="Bert pre-trained model selected in the list: bert-base-uncased, "
                              "bert-large-uncased, bert-base-cased, bert-base-multilingual, bert-base-chinese.")
     parser.add_argument("--output_dir",
-                        default=None,
+                        default="outputs/finetuned_lm/",
                         type=str,
-                        required=True,
                         help="The output directory where the model checkpoints will be written.")
 
     ## Other parameters
@@ -432,7 +416,7 @@ def main():
                         help="The maximum total input sequence length after WordPiece tokenization. \n"
                              "Sequences longer than this will be truncated, and sequences shorter \n"
                              "than this will be padded.")
-    parser.add_argument("--do_train",
+    parser.add_argument("--do_train", default=True,
                         action='store_true',
                         help="Whether to run training.")
     parser.add_argument("--train_batch_size",
@@ -458,7 +442,7 @@ def main():
     parser.add_argument("--on_memory",
                         action='store_true',
                         help="Whether to load train samples into memory or use disk")
-    parser.add_argument("--do_lower_case",
+    parser.add_argument("--do_lower_case", default=True,
                         action='store_true',
                         help="Whether to lower case the input text. True for uncased models, False for cased models.")
     parser.add_argument("--local_rank",
