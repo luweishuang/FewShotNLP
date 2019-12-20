@@ -15,10 +15,10 @@ from torch.utils.data import DataLoader, Dataset, RandomSampler
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
 
-from transformers import *
-# from pytorch_pretrained_bert.modeling import BertForPreTraining
-# from pytorch_pretrained_bert.tokenization import BertTokenizer
-# from pytorch_pretrained_bert.optimization import BertAdam, WarmupLinearSchedule
+# from transformers import *
+from pytorch_pretrained_bert.modeling import BertForPreTraining
+from pytorch_pretrained_bert.tokenization import BertTokenizer
+from pytorch_pretrained_bert.optimization import BertAdam, WarmupLinearSchedule
 from torch.nn import CrossEntropyLoss
 
 
