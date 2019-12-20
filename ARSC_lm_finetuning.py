@@ -502,7 +502,7 @@ def main():
         os.makedirs(args.output_dir)
 
     # tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
-    tokenizer = BertTokenizer.from_pretrained("./models/bert-base-uncased/", do_lower_case=args.do_lower_case)
+    tokenizer = BertTokenizer.from_pretrained(os.path.join("./models", args.bert_model), do_lower_case=args.do_lower_case)
 
     #train_examples = None
     num_train_optimization_steps = None
