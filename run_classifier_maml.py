@@ -1,18 +1,5 @@
 # coding=utf-8
-# Copyright 2018 The Google AI Language Team Authors and The HuggingFace Inc. team.
-# Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+
 """BERT finetuning runner."""
 
 from __future__ import absolute_import, division, print_function
@@ -101,7 +88,8 @@ class DataProcessor(object):
             lines = []
             for line in reader:
                 if sys.version_info[0] == 2:
-                    line = list(unicode(cell, 'utf-8') for cell in line)
+                    # line = list(uni(cell, 'utf-8') for cell in line)
+                    line = list(cell for cell in line)
                 lines.append(line)
             return lines
 
@@ -405,31 +393,28 @@ class WnliProcessor(DataProcessor):
                 InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
         return examples
 
+
 class AmazonProcessor(DataProcessor):
     """Processor for the Amazon data set ."""
-    def calculate_task_num(self,data_dir):
-        with open(data_dir+'/workspace.filtered.list', 'r') as train_f:
+    def calculate_task_num(self, data_dir):
+        with open(os.path.join(data_dir, 'workspace.filtered.list'), 'r') as train_f:
             train_list = train_f.readlines()
         self.train_task_num = len(train_list)*3
 
-        with open(data_dir+'/workspace.target.list', 'r') as test_f:
+        with open(os.path.join(data_dir, 'workspace.target.list'), 'r') as test_f:
             test_list = test_f.readlines()
         self.test_task_num = len(test_list)*3
-    
         return self.train_task_num, self.test_task_num
 
     def _read_file(self,dataname):
-        
         with open(dataname, "r") as f:
             reader = csv.reader(f, delimiter="\t")
             lines = []
             for line in reader:
-                # if dataname == "data/Amazon_few_shot/books.t5.test":
-                #     print(line[0], line[1])
                 lines.append(line)
             return lines
 
-    def _divide_tasks(self,data_name, type):
+    def _divide_tasks(self, data_name, type):
         task_class = ['t2', 't5', 't4']
         tasks = []
         total_len = 0
@@ -439,11 +424,9 @@ class AmazonProcessor(DataProcessor):
             task_data = self._read_file(file_name)
             tasks.append(task_data)
             total_len = total_len+len(task_data)
-
         return tasks, total_len
 
     def _get_examples(self, data_dir, filter_name, type):
-    
         tasks = []
         labels = []
         total_len = 0
@@ -451,7 +434,7 @@ class AmazonProcessor(DataProcessor):
             task_list = f.readlines()
             task_list = [name.strip() for name in task_list]
         for task_name in task_list:
-            diverse_task, task_len = self._divide_tasks(os.path.join(data_dir, task_name), type)
+            diverse_task, task_len = self._divide_tasks(os.path.join(os.path.join(data_dir, "data"), task_name), type)
             tasks.extend(diverse_task)
             total_len += task_len
         return tasks, total_len
@@ -460,12 +443,12 @@ class AmazonProcessor(DataProcessor):
         self.max_train_number = 0
         self.max_dev_number = 0
         self.max_test_number = 0
-        self.train_tasks,self.train_number = self._get_examples(data_dir, 'workspace.filtered.list', 'train')
-        self.dev_tasks,self.dev_number = self._get_examples(data_dir, 'workspace.filtered.list', 'dev')
-        self.test_tasks,self.test_number = self._get_examples(data_dir, 'workspace.filtered.list', 'test')
-        self.fsl_train,self.fsl_train_number = self._get_examples(data_dir, 'workspace.target.list', 'train')
-        self.fsl_dev,self.fsl_dev_number = self._get_examples(data_dir, 'workspace.target.list', 'dev')
-        self.fsl_test,self.fsl_test_number = self._get_examples(data_dir, 'workspace.target.list', 'test')
+        self.train_tasks, self.train_number = self._get_examples(data_dir, 'workspace.filtered.list', 'train')
+        self.dev_tasks, self.dev_number = self._get_examples(data_dir, 'workspace.filtered.list', 'dev')
+        self.test_tasks, self.test_number = self._get_examples(data_dir, 'workspace.filtered.list', 'test')
+        self.fsl_train, self.fsl_train_number = self._get_examples(data_dir, 'workspace.target.list', 'train')
+        self.fsl_dev, self.fsl_dev_number = self._get_examples(data_dir, 'workspace.target.list', 'dev')
+        self.fsl_test, self.fsl_test_number = self._get_examples(data_dir, 'workspace.target.list', 'test')
         self.train_examples = []
         self.train_labels = []
         self.dev_examples = []
@@ -482,7 +465,7 @@ class AmazonProcessor(DataProcessor):
             examples, labels = self.get_train_examples(data_dir, id)
             self.train_examples.append(examples)
             self.train_labels.append(labels)
-            examples, labels = self.get_dev_examples(data_dir,id)
+            examples, labels = self.get_dev_examples(data_dir, id)
             self.dev_examples.append(examples)
             self.dev_labels.append(labels)
             examples, labels = self.get_test_examples(data_dir, id)
@@ -503,7 +486,7 @@ class AmazonProcessor(DataProcessor):
         return len(self.train_examples[task_id])
 
     def get_train_examples(self, data_dir, task_id=0):
-        return self._create_examples(self.train_tasks[task_id],"train",task_id) 
+        return self._create_examples(self.train_tasks[task_id], "train", task_id)
 
     def get_dev_examples(self, data_dir,task_id=0):
         """See base class."""
@@ -537,7 +520,6 @@ class AmazonProcessor(DataProcessor):
         return support
 
     def get_labels(self):
-            
         """See base class."""
         return ["-1", "1"]
 
@@ -574,17 +556,14 @@ class AmazonProcessor(DataProcessor):
             support.extend([train_examples[i] for i in select_indices])
             # select_indices = np.random.choice(false_dev_indices, Q, False)
             # query.extend([dev_examples[i] for i in select_indices])
-            
-
         return support, query
 
     def _create_examples(self, lines, set_type, set_id):
-
         """Creates examples for the training and dev sets."""
         examples = []
         labels = []
         for (i, line) in enumerate(lines):    
-            guid = "%s-%s-%s" % (set_type,set_id, i)
+            guid = "%s-%s-%s" % (set_type, set_id, i)
             if set_type == "test":
                 text_a = line[0]
                 # print(text_a)
@@ -598,16 +577,12 @@ class AmazonProcessor(DataProcessor):
             examples.append(
                 InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
             labels.append(label)
-
         return examples, labels
 
 
-
-def convert_examples_to_features(examples, label_list, max_seq_length,
-                                 tokenizer, output_mode):
+def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer, output_mode):
     """Loads a data file into a list of `InputBatch`s."""
-
-    label_map = {label : i for i, label in enumerate(label_list)}
+    label_map = {label: i for i, label in enumerate(label_list)}
 
     features = []
     for (ex_index, example) in enumerate(examples):
@@ -726,23 +701,14 @@ def acc_and_f1(preds, labels):
     }
 
 
-# def pearson_and_spearman(preds, labels):
-#     pearson_corr = pearsonr(preds, labels)[0]
-#     spearman_corr = spearmanr(preds, labels)[0]
-#     return {
-#         "pearson": pearson_corr,
-#         "spearmanr": spearman_corr,
-#         "corr": (pearson_corr + spearman_corr) / 2,
-#     }
-
 def get_train_prob(reward_prob, K, epsilon):
     indices = np.argpartition(reward_prob, -K)[-K:]
     one_hot_prob = np.zeros((len(reward_prob)))
     for ind in indices:
         one_hot_prob[ind] = 1
     one_hot_prob = epsilon*np.ones(len(reward_prob))+one_hot_prob
-
     return one_hot_prob/np.sum(one_hot_prob)
+
 
 def compute_metrics(task_name, preds, labels):
     assert len(preds) == len(labels)
@@ -771,6 +737,7 @@ def compute_metrics(task_name, preds, labels):
     else:
         raise KeyError(task_name)
 
+
 def accuracy(pred, label):
     '''
     pred: prediction result
@@ -779,30 +746,26 @@ def accuracy(pred, label):
     '''
     return torch.mean((pred.view(-1)) == (label.view(-1)).type(torch.FloatTensor))
 
+
 def main():
     parser = argparse.ArgumentParser()
-
     ## Required parameters
     parser.add_argument("--data_dir",
-                        default=None,
+                        default="data/Amazon_few_shot",
                         type=str,
-                        required=True,
                         help="The input data dir. Should contain the .tsv files (or other data files) for the task.")
-    parser.add_argument("--bert_model", default=None, type=str, required=True,
+    parser.add_argument("--bert_model", default="models/finetuned_lm", type=str,
                         help="Bert pre-trained model selected in the list: bert-base-uncased, "
                         "bert-large-uncased, bert-base-cased, bert-large-cased, bert-base-multilingual-uncased, "
                         "bert-base-multilingual-cased, bert-base-chinese.")
     parser.add_argument("--task_name",
-                        default=None,
+                        default="Amazon",
                         type=str,
-                        required=True,
                         help="The name of the task to train.")
     parser.add_argument("--output_dir",
-                        default=None,
+                        default="outputs/amazon_maml",
                         type=str,
-                        required=True,
                         help="The output directory where the model predictions and checkpoints will be written.")
-
     ## Other parameters
     parser.add_argument("--is_init",
                         default=False,
@@ -822,13 +785,13 @@ def main():
                         help="The maximum total input sequence length after WordPiece tokenization. \n"
                              "Sequences longer than this will be truncated, and sequences shorter \n"
                              "than this will be padded.")
-    parser.add_argument("--do_train",
+    parser.add_argument("--do_train", default=True,
                         action='store_true',
                         help="Whether to run training.")
-    parser.add_argument("--do_eval",
+    parser.add_argument("--do_eval", default=True,
                         action='store_true',
                         help="Whether to run eval on the dev set.")
-    parser.add_argument("--do_lower_case",
+    parser.add_argument("--do_lower_case", default=True,
                         action='store_true',
                         help="Set this flag if you are using an uncased model.")
     parser.add_argument("--train_batch_size",
@@ -913,7 +876,7 @@ def main():
         "qnli": QnliProcessor,
         "rte": RteProcessor,
         "wnli": WnliProcessor,
-        "amazon":AmazonProcessor,
+        "amazon": AmazonProcessor,
     }
 
     output_modes = {
@@ -926,7 +889,7 @@ def main():
         "qnli": "classification",
         "rte": "classification",
         "wnli": "classification",
-        "amazon":"classification"
+        "amazon": "classification"
     }
 
     if args.local_rank == -1 or args.no_cuda:
@@ -995,7 +958,7 @@ def main():
     N_class = num_labels
     train_batch_s = 1
     Is_reptile = args.is_reptile
-    if args.do_train :
+    if args.do_train:
         # train_examples = processor.get_train_examples(args.data_dir)
         num_train_optimization_steps = N_iteration*(N_shot+N_query)*N_class*N_task
         if args.local_rank != -1:
@@ -1003,9 +966,7 @@ def main():
 
     # Prepare model
     cache_dir = args.cache_dir if args.cache_dir else os.path.join(str(PYTORCH_PRETRAINED_BERT_CACHE), 'distributed_{}'.format(args.local_rank))
-    model = BertForSequenceClassification.from_pretrained(args.bert_model,
-              cache_dir=cache_dir,
-              num_labels=num_labels) # num_labels as proto_network's embedding size
+    model = BertForSequenceClassification.from_pretrained(args.bert_model, cache_dir=cache_dir, num_labels=num_labels)  # num_labels as proto_network's embedding size
     print("Whether Initialize the model?")
     if args.is_init:
         print("Initializing........")
@@ -1024,15 +985,6 @@ def main():
         model = torch.nn.DataParallel(model)
 
     # Prepare optimizer
-    param_optimizer = list(model.named_parameters())
-    # no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
-    # optimizer_grouped_parameters = [
-    #     {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
-    #     {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}]
-    # optimizer = BertAdam(optimizer_grouped_parameters,
-    #                         lr=args.learning_rate,
-    #                         warmup=args.warmup_proportion,
-    #                         t_total=num_train_optimization_steps)
     optimizer = optim.Adam(model.parameters(), lr=args.inner_learning_rate)
     K_last = 3
     epsilon = 1e-6
@@ -1054,19 +1006,16 @@ def main():
                     reward_prob.append(abs(np.random.choice(task_rewards[task_id], 1)[0]))
                 else:
                     reward_prob.append(abs(np.random.choice(task_rewards[task_id][-K_last:], 1)[0]))
-            # reward_prob = [math.exp(prob) for prob in reward_prob]
-            # reward_prob = [float(prob)/sum(reward_prob) for prob in reward_prob]
             reward_prob = get_train_prob(reward_prob, N_task,epsilon)
             selected_tasks = np.random.choice(task_list, N_task,replace=False)
             weight_before = deepcopy(model.state_dict())
             update_vars = []
             fomaml_vars = []
-            for task_id in tqdm(selected_tasks,desc="Task"):
+            for task_id in tqdm(selected_tasks, desc="Task"):
                 task_acc = 0
                 for _ in range(Inner_epochs):
                     train_support, train_query = processor.get_next_batch(train_batch_s, N_class, N_shot, N_query, 'train', task_id)
-                    support_features = convert_examples_to_features(
-                        train_support, label_list, args.max_seq_length, tokenizer, output_mode)
+                    support_features = convert_examples_to_features(train_support, label_list, args.max_seq_length, tokenizer, output_mode)
 
                     support_input_ids = torch.tensor([f.input_ids for f in support_features], dtype=torch.long).to(device)
                     support_mask_ids = torch.tensor([f.input_mask for f in support_features], dtype=torch.long).to(device)
@@ -1108,7 +1057,6 @@ def main():
 
                 task_rewards[task_id].append(task_acc-last_observation[task_id])
                 last_observation[task_id] = task_acc
-
                 if not Is_reptile:
                     for name in weight_after:
                         tmp_fomaml_var[name] = weight_after[name]-last_backup[name]
@@ -1137,17 +1085,6 @@ def main():
                     new_weight_dict[name] = torch.mean(stack_weight, dim=0).cuda()
                     new_weight_dict[name] = weight_before[name]+new_weight_dict[name]/args.inner_learning_rate*args.outer_learning_rate
             model.load_state_dict(new_weight_dict)
-            # ###MAML code
-            # update_lr = 5e-2
-            # for i in range(task_num):
-            #     logits = model(input_ids, segment_ids, input_mask, labels=None)
-            #     if output_mode = "classification":
-            #         loss_fct = CrossEntropyLoss()
-            #         loss = loss_fct(logits.view(-1, num_labels), label_ids.view(-1))
-            #         grad = torch.autograd.grad(loss, model.parameters())
-            #         fast_weights = list(map(lambda p: p[1] - update_lr * p[0], zip(grad, model.parameters())))
-            #         with torch.no_grad():
-                        # logits
 
     if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0) :
         # Save a trained model, configuration and tokenizer
@@ -1167,7 +1104,6 @@ def main():
     else:
         model = BertForSequenceClassification.from_pretrained(args.bert_model, num_labels=num_labels)
     model.to(device)
-
 
     loss_list = {}
     global_step = 0
@@ -1231,7 +1167,6 @@ def main():
                 with torch.no_grad():        
                     logits = model(input_ids, segment_ids, input_mask, labels=None)
 
-                
                 # create eval loss and other metric required by the task
                 if output_mode == "classification":
                     loss_fct = CrossEntropyLoss()
@@ -1349,6 +1284,7 @@ def main():
                 for key in sorted(result.keys()):
                     logger.info("  %s = %s", key, str(result[key]))
                     writer.write("%s = %s\n" % (key, str(result[key])))
+
 
 if __name__ == "__main__":
     main()
