@@ -1,8 +1,7 @@
-import numpy as np
+
 import csv
 import os
-import random
-import sys
+
 
 data_dir = "data/Amazon_few_shot"
 filter_name = "workspace.filtered.list"

@@ -125,7 +125,6 @@ class BERTDataset(Dataset):
                        torch.tensor(cur_features.segment_ids),
                        torch.tensor(cur_features.lm_label_ids),
                        torch.tensor(cur_features.is_next))
-
         return cur_tensors
 
     def random_sent(self, index):
@@ -206,7 +205,6 @@ class BERTDataset(Dataset):
                 
             #check if our picked random line is really from another doc like we want it to be
             if self.current_random_doc != self.current_doc:
-                
                 break
         # print("random Index:", rand_index, line)
         return line
@@ -224,7 +222,6 @@ class BERTDataset(Dataset):
             self.random_file.close()
             self.random_file = open(self.corpus_path, "r", encoding=self.encoding)
             line = next(self.random_file).strip()
-        
         return line
 
 
@@ -296,7 +293,6 @@ def random_word(tokens, tokenizer):
         else:
             # no masking token (will be ignored by loss function later)
             output_label.append(-1)
-
     return tokens, output_label
 
 
@@ -396,8 +392,7 @@ def convert_example_to_features(example, max_seq_length, tokenizer):
 
 def main():
     parser = argparse.ArgumentParser()
-
-    ## Required parameters
+    # Required parameters
     parser.add_argument("--train_corpus",
                         default="data/Amazon_corpus.txt",
                         type=str,
@@ -409,8 +404,7 @@ def main():
                         default="outputs/finetuned_lm/",
                         type=str,
                         help="The output directory where the model checkpoints will be written.")
-
-    ## Other parameters
+    # Other parameters
     parser.add_argument("--max_seq_length",
                         default=128,
                         type=int,
@@ -466,7 +460,6 @@ def main():
                         help = "Loss scaling to improve fp16 numeric stability. Only used when fp16 set to True.\n"
                         "0 (default value): dynamic loss scaling.\n"
                         "Positive power of 2: static loss scaling value.\n")
-
     args = parser.parse_args()
 
     if args.local_rank == -1 or args.no_cuda:
@@ -478,12 +471,10 @@ def main():
         n_gpu = 1
         # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
         torch.distributed.init_process_group(backend='nccl')
-    logger.info("device: {} n_gpu: {}, distributed training: {}, 16-bits training: {}".format(
-        device, n_gpu, bool(args.local_rank != -1), args.fp16))
+    logger.info("device: {} n_gpu: {}, distributed training: {}, 16-bits training: {}".format(device, n_gpu, bool(args.local_rank != -1), args.fp16))
 
     if args.gradient_accumulation_steps < 1:
-        raise ValueError("Invalid gradient_accumulation_steps parameter: {}, should be >= 1".format(
-                            args.gradient_accumulation_steps))
+        raise ValueError("Invalid gradient_accumulation_steps parameter: {}, should be >= 1".format(args.gradient_accumulation_steps))
 
     args.train_batch_size = args.train_batch_size // args.gradient_accumulation_steps
 
@@ -501,17 +492,14 @@ def main():
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-    # tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
     tokenizer = BertTokenizer.from_pretrained(os.path.join("./models", args.bert_model), do_lower_case=args.do_lower_case)
 
-    #train_examples = None
+    # train_examples = None
     num_train_optimization_steps = None
     if args.do_train:
         print("Loading Train Dataset", args.train_corpus)
-        train_dataset = BERTDataset(args.train_corpus, tokenizer, seq_len=args.max_seq_length,
-                                    corpus_lines=None, on_memory=args.on_memory)
-        num_train_optimization_steps = int(
-            len(train_dataset) / args.train_batch_size / args.gradient_accumulation_steps) * args.num_train_epochs
+        train_dataset = BERTDataset(args.train_corpus, tokenizer, seq_len=args.max_seq_length, corpus_lines=None, on_memory=args.on_memory)
+        num_train_optimization_steps = int(len(train_dataset) / args.train_batch_size / args.gradient_accumulation_steps) * args.num_train_epochs
         if args.local_rank != -1:
             num_train_optimization_steps = num_train_optimization_steps // torch.distributed.get_world_size()
 
@@ -589,7 +577,7 @@ def main():
                 loss_fct = CrossEntropyLoss(ignore_index=-1)
                 loss = loss_fct(masked_lm_logits_scores.view(-1, model.config.vocab_size), lm_label_ids.view(-1))
                 if n_gpu > 1:
-                    loss = loss.mean() # mean() to average on multi-gpu.
+                    loss = loss.mean()   # mean() to average on multi-gpu.
                 if args.gradient_accumulation_steps > 1:
                     loss = loss / args.gradient_accumulation_steps
                 if args.fp16:
@@ -603,8 +591,7 @@ def main():
                     if args.fp16:
                         # modify learning rate with special warm up BERT uses
                         # if args.fp16 is False, BertAdam is used that handles this automatically
-                        lr_this_step = args.learning_rate * warmup_linear.get_lr(global_step/num_train_optimization_steps,
-                                                                                 args.warmup_proportion)
+                        lr_this_step = args.learning_rate * warmup_linear.get_lr(global_step/num_train_optimization_steps, args.warmup_proportion)
                         for param_group in optimizer.param_groups:
                             param_group['lr'] = lr_this_step
                     optimizer.step()
@@ -613,7 +600,7 @@ def main():
 
         # Save a trained model
         logger.info("** ** * Saving fine - tuned model ** ** * ")
-        model_to_save = model.module if hasattr(model, 'module') else model  # Only save the model it-self
+        model_to_save = model.module if hasattr(model, 'module') else model    # Only save the model it-self
         output_model_file = os.path.join(args.output_dir, "pytorch_model.bin")
         if args.do_train:
             torch.save(model_to_save.state_dict(), output_model_file)
