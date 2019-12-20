@@ -421,7 +421,7 @@ def main():
                         action='store_true',
                         help="Whether to run training.")
     parser.add_argument("--train_batch_size",
-                        default=32,
+                        default=16,
                         type=int,
                         help="Total batch size for training.")
     parser.add_argument("--learning_rate",
@@ -501,8 +501,8 @@ def main():
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-    tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
-
+    # tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
+    tokenizer = BertTokenizer.from_pretrained("./models/bert-base-uncased/", do_lower_case=args.do_lower_case)
 
     #train_examples = None
     num_train_optimization_steps = None
@@ -516,7 +516,7 @@ def main():
             num_train_optimization_steps = num_train_optimization_steps // torch.distributed.get_world_size()
 
     # Prepare model
-    model = BertForPreTraining.from_pretrained(args.bert_model)
+    model = BertForPreTraining.from_pretrained(os.path.join("./models", args.bert_model))
 
     if args.fp16:
         model.half()
